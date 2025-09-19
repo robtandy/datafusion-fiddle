@@ -4,6 +4,8 @@ import * as Viz from "@viz-js/viz";
 export interface SqlRequest {
   stmts: string[];
   distributed: boolean;
+  partitions: number;
+  partitions_per_task: number;
 }
 
 export interface SqlResponse {
@@ -18,10 +20,14 @@ export interface SqlResponse {
 export async function executeStatements(
   stmts: string[],
   distributed: boolean,
+  partitions: number,
+  partitions_per_task: number,
 ): Promise<SqlResponse> {
   const req: SqlRequest = {
     stmts,
     distributed,
+    partitions,
+    partitions_per_task,
   };
   const res = await fetch("/api/main", {
     method: "POST",
@@ -48,6 +54,8 @@ export type ApiState =
 export interface ApiRequest {
   statement: string;
   distributed: boolean;
+  partitions: number;
+  partitions_per_task: number;
 }
 
 export function useApi() {
@@ -62,6 +70,8 @@ export function useApi() {
           .map((_) => _.trim())
           .filter((_) => _.length > 0),
         req.distributed,
+        req.partitions,
+        req.partitions_per_task,
       );
 
       if (result.graphviz.length > 0) {
@@ -80,6 +90,7 @@ export function useApi() {
       };
     } catch (error) {
       const err = error as Error;
+      console.log("error executing statements", err);
       return { type: "error" as const, message: err.toString() };
     }
   }, []);

@@ -99,6 +99,18 @@ async fn main() -> Result<(), Error> {
 struct SqlRequest {
     distributed: bool,
     stmts: Vec<String>,
+    #[serde(default = "default_partitions")]
+    partitions: usize,
+    #[serde(default = "default_partitions_per_task")]
+    partitions_per_task: usize,
+}
+
+fn default_partitions() -> usize {
+    4
+}
+
+fn default_partitions_per_task() -> usize {
+    2
 }
 
 pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
@@ -107,7 +119,15 @@ pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
         None => return throw_error("No sql request was passed", None, StatusCode::BAD_REQUEST),
     };
 
-    let res = match execute_statements(req.stmts, "api/parquet", req.distributed).await {
+    let res = match execute_statements(
+        req.stmts,
+        "api/parquet",
+        req.distributed,
+        req.partitions,
+        req.partitions_per_task,
+    )
+    .await
+    {
         Ok(res) => res,
         Err(err) => {
             return throw_error(
@@ -162,17 +182,18 @@ async fn execute_statements(
     stmts: Vec<String>,
     path: impl Display,
     distributed: bool,
+    partitions: usize,
+    partitions_per_task: usize,
 ) -> datafusion::error::Result<SqlResult> {
     let options = FormatOptions::default().with_display_error(true);
-    let cfg = SessionConfig::new().with_information_schema(true);
+    let mut cfg = SessionConfig::new()
+        .with_information_schema(true)
+        .with_target_partitions(partitions);
 
     let mut builder = SessionStateBuilder::new()
         .with_default_features()
         .with_config(cfg.clone());
     if distributed {
-        let mut cfg = cfg.with_target_partitions(4); // 4 partitions such that we have concurrency
-                                                     // but not too many partitions to make understanding
-                                                     // Disable single partition joins to better showcase distributed plans
         cfg = cfg.set_str(
             "datafusion.optimizer.hash_join_single_partition_threshold",
             "0",
@@ -185,7 +206,8 @@ async fn execute_statements(
         builder = builder
             .with_config(cfg)
             .with_physical_optimizer_rule(Arc::new(
-                DistributedPhysicalOptimizerRule::default().with_maximum_partitions_per_task(2),
+                DistributedPhysicalOptimizerRule::default()
+                    .with_maximum_partitions_per_task(partitions_per_task),
             ))
             .with_distributed_channel_resolver(CHANNEL_RESOLVER.clone());
     }
@@ -241,8 +263,7 @@ async fn execute_statements(
 
     let physical_plan_str =
         display_physical_plan(&physical_plan).unwrap_or_else(|err| err.to_string());
-    let graphviz_str = 
-        display_graphviz_plan(&physical_plan).unwrap_or_else(|err| err.to_string());
+    let graphviz_str = display_graphviz_plan(&physical_plan).unwrap_or_else(|err| err.to_string());
 
     Ok(SqlResult {
         columns,
@@ -299,6 +320,8 @@ mod tests {
             ],
             format!("{}/api/parquet", env!("CARGO_MANIFEST_DIR")),
             false,
+            4,
+            2,
         )
         .await?;
 
@@ -318,6 +341,8 @@ mod tests {
             vec!["SELECT * FROM weather LIMIT 10".to_string()],
             format!("{}/api/parquet", env!("CARGO_MANIFEST_DIR")),
             false,
+            4,
+            2,
         )
         .await?;
 
@@ -375,6 +400,8 @@ where
             .to_string()],
             format!("{}/api/parquet", env!("CARGO_MANIFEST_DIR")),
             true,
+            4,
+            2,
         )
         .await?;
 
