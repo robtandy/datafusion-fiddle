@@ -43,6 +43,68 @@ const SqlResponseVisualizer = React.memo(
       "result-tab",
       "table",
     );
+    const [isFullscreen, setIsFullscreen] = React.useState(false);
+    const tabContentRef = React.useRef<HTMLDivElement>(null);
+    const fullscreenContentRef = React.useRef<HTMLDivElement>(null);
+    const [buttonPosition, setButtonPosition] = React.useState({ top: 0, right: 0 });
+
+    React.useEffect(() => {
+      const updateButtonPosition = () => {
+        if (tabContentRef.current && selectedTab === "graphviz_svg") {
+          const rect = tabContentRef.current.getBoundingClientRect();
+          setButtonPosition({
+            top: rect.top + 8,
+            right: window.innerWidth - rect.right + 8,
+          });
+        }
+      };
+
+      // Update position immediately when tab changes
+      if (selectedTab === "graphviz_svg") {
+        // Small delay to ensure DOM is updated
+        setTimeout(updateButtonPosition, 0);
+      }
+
+      window.addEventListener('resize', updateButtonPosition);
+      window.addEventListener('scroll', updateButtonPosition, true);
+
+      return () => {
+        window.removeEventListener('resize', updateButtonPosition);
+        window.removeEventListener('scroll', updateButtonPosition, true);
+      };
+    }, [selectedTab]);
+
+    // Center content when toggling fullscreen
+    React.useEffect(() => {
+      const centerContent = () => {
+        const targetRef = isFullscreen ? fullscreenContentRef : tabContentRef;
+        if (targetRef.current) {
+          const container = targetRef.current;
+          const svg = container.querySelector('svg');
+          if (svg) {
+            const svgRect = svg.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // Center horizontally
+            const horizontalScroll = Math.max(0, (svg.scrollWidth - containerRect.width) / 2);
+            container.scrollLeft = horizontalScroll;
+
+            // Scroll to top
+            container.scrollTop = 0;
+          }
+        }
+      };
+
+      if (selectedTab === "graphviz_svg") {
+        // Small delay to ensure DOM is updated
+        setTimeout(centerContent, 0);
+      }
+    }, [isFullscreen, selectedTab]);
+
+    const toggleFullscreen = () => {
+      setIsFullscreen(!isFullscreen);
+    };
+
     return (
       <Tabs.Root
         value={selectedTab}
@@ -162,9 +224,45 @@ const SqlResponseVisualizer = React.memo(
         </Tabs.Content>
         <Tabs.Content
           value="graphviz_svg"
-          className="flex-1 overflow-auto px-2"
+          className="flex-1 relative overflow-auto"
+          ref={tabContentRef}
         >
-          <div dangerouslySetInnerHTML={{ __html: result.graphviz_svg }} />
+          {selectedTab === "graphviz_svg" && (
+            <button
+              onClick={toggleFullscreen}
+              className="z-10 px-3 py-1.5 bg-secondary-surface hover:bg-primary-surface text-text-primary rounded-md text-sm font-medium shadow-md transition-all border border-border"
+              style={{
+                position: 'fixed',
+                top: `${buttonPosition.top}px`,
+                right: `${buttonPosition.right}px`
+              }}
+            >
+              {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            </button>
+          )}
+          <div className="px-2">
+            <div dangerouslySetInnerHTML={{ __html: result.graphviz_svg }} />
+          </div>
+          {isFullscreen && (
+            <div className="fixed inset-0 z-50 bg-primary-surface flex flex-col">
+              <div className="flex justify-between items-center p-4 border-b border-border">
+                <h2 className="text-lg font-semibold text-text-primary">
+                  Graphviz Physical Plan
+                </h2>
+                <button
+                  onClick={toggleFullscreen}
+                  className="px-3 py-1.5 bg-accent hover:bg-accent/90 text-white rounded-md text-sm font-medium shadow-md transition-all"
+                >
+                  Exit Fullscreen
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto p-4" ref={fullscreenContentRef}>
+                <div className="flex justify-center min-w-fit">
+                  <div dangerouslySetInnerHTML={{ __html: result.graphviz_svg }} />
+                </div>
+              </div>
+            </div>
+          )}
         </Tabs.Content>
         <Tabs.Content value="graphviz" className="flex-1 overflow-auto px-2">
           <span
