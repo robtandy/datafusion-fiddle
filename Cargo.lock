@@ -1116,6 +1116,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "datafusion-fiddle-backend"
+version = "0.1.0"
+dependencies = [
+ "arrow-flight",
+ "async-trait",
+ "datafusion",
+ "datafusion-distributed",
+ "futures",
+ "hyper-util",
+ "insta",
+ "lambda_runtime 0.13.0",
+ "serde",
+ "serde_json",
+ "tabled",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tower 0.5.2",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "vercel_runtime",
+]
+
+[[package]]
 name = "datafusion-functions"
 version = "49.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2131,7 +2156,7 @@ dependencies = [
  "http-body",
  "http-body-util",
  "hyper",
- "lambda_runtime",
+ "lambda_runtime 0.14.4",
  "mime",
  "percent-encoding",
  "pin-project-lite",
@@ -2140,6 +2165,34 @@ dependencies = [
  "serde_urlencoded",
  "tokio-stream",
  "url",
+]
+
+[[package]]
+name = "lambda_runtime"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed49669d6430292aead991e19bf13153135a884f916e68f32997c951af637ebe"
+dependencies = [
+ "async-stream",
+ "base64",
+ "bytes",
+ "futures",
+ "http",
+ "http-body",
+ "http-body-util",
+ "http-serde",
+ "hyper",
+ "hyper-util",
+ "lambda_runtime_api_client 0.11.1",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "tokio",
+ "tokio-stream",
+ "tower 0.4.13",
+ "tower-layer",
+ "tracing",
 ]
 
 [[package]]
@@ -2156,7 +2209,7 @@ dependencies = [
  "http-body-util",
  "http-serde",
  "hyper",
- "lambda_runtime_api_client",
+ "lambda_runtime_api_client 0.12.4",
  "pin-project",
  "serde",
  "serde_json",
@@ -2165,6 +2218,27 @@ dependencies = [
  "tokio-stream",
  "tower 0.5.2",
  "tracing",
+]
+
+[[package]]
+name = "lambda_runtime_api_client"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c90a10f094475a34a04da2be11686c4dcfe214d93413162db9ffdff3d3af293a"
+dependencies = [
+ "bytes",
+ "futures-channel",
+ "futures-util",
+ "http",
+ "http-body",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "tokio",
+ "tower 0.4.13",
+ "tower-service",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2395,25 +2469,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "next-rust"
-version = "0.1.0"
+name = "nu-ansi-term"
+version = "0.50.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4a28e057d01f97e61255210fcff094d74ed0466038633e95017f5beb68e4399"
 dependencies = [
- "arrow-flight",
- "async-trait",
- "datafusion",
- "datafusion-distributed",
- "futures",
- "hyper-util",
- "insta",
- "serde",
- "serde_json",
- "tabled",
- "tokio",
- "tokio-stream",
- "tonic",
- "tower 0.5.2",
- "url",
- "vercel_runtime",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3525,6 +3586,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tracing-log"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3"
+dependencies = [
+ "log",
+ "once_cell",
+ "tracing-core",
+]
+
+[[package]]
 name = "tracing-serde"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3541,14 +3613,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2054a14f5307d601f88daf0553e1cbf472acc4f2c51afab632431cdcd72124d5"
 dependencies = [
  "matchers",
+ "nu-ansi-term",
  "once_cell",
  "regex-automata",
  "serde",
  "serde_json",
  "sharded-slab",
+ "smallvec",
  "thread_local",
  "tracing",
  "tracing-core",
+ "tracing-log",
  "tracing-serde",
 ]
 
@@ -3640,7 +3715,7 @@ dependencies = [
  "bytes",
  "http-serde",
  "lambda_http",
- "lambda_runtime",
+ "lambda_runtime 0.14.4",
  "serde",
  "serde_json",
  "tokio",

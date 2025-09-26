@@ -17,8 +17,12 @@ export async function executeStatements (stmts: string[], distributed: boolean):
     stmts,
     distributed
   }
+  // Support configurable API URL for Lambda deployment
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+  const endpoint = apiUrl ? `${apiUrl}/api/sql` : '/api/main';
+
   const res = await fetch(
-    '/api/main',
+    endpoint,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

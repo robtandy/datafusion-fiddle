@@ -1,13 +1,22 @@
 [package]
-name = "next-rust"
+name = "datafusion-fiddle-backend"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["lambda"]
+lambda = []
+vercel = ["vercel_runtime"]
+
 [dependencies]
-tokio = { version = "1", features = ["macros"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 serde_json = { version = "1", features = ["raw_value"] }
-# Documentation: https://docs.rs/vercel_runtime/latest/vercel_runtime
-vercel_runtime = { version = "1.1.4" }
+# Lambda runtime dependencies
+lambda_runtime = "0.13"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# Vercel runtime (can be removed once fully migrated)
+vercel_runtime = { version = "1.1.4", optional = true }
 datafusion = { version = "49.0.0" }
 datafusion-distributed = { git = "https://github.com/datafusion-contrib/datafusion-distributed", branch = "main" }
 serde = { version = "1.0.203", features = ["derive"] }
@@ -24,7 +33,13 @@ arrow-flight = "55.2.0"
 insta = "1.43.2"
 tabled = "0.20.0"
 
-# Each handler has to be specified as [[bin]]
+# Lambda binary
+[[bin]]
+name = "lambda"
+path = "api/lambda.rs"
+
+# Vercel binary (for backwards compatibility)
 [[bin]]
 name = "sql"
 path = "api/main.rs"
+required-features = ["vercel"]

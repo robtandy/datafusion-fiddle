@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: DataFusion Fiddle Lambda Backend
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Environment:
+      Variables:
+        RUST_LOG: info
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    Description: Deployment stage (dev, staging, prod)
+
+Resources:
+  DataFusionApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'POST, OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+        MaxAge: "'86400'"
+
+  DataFusionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/lambda/lambda/bootstrap.zip
+      Handler: bootstrap
+      Runtime: provided.al2023
+      Architectures:
+        - arm64
+      Events:
+        ApiPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DataFusionApi
+            Path: /api/sql
+            Method: POST
+      Environment:
+        Variables:
+          PARQUET_PATH: api/parquet
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${DataFusionApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/"
+  FunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt DataFusionFunction.Arn
